@@ -1,23 +1,21 @@
-interface IDocter {
-  name: string;
-  time: string;
-  queue: IQueue[];
-}
-
 interface IQueue {
-  VN: string;
-  XL: string;
+  Doctor: string;
+  Vn: string;
   Ack: string;
   RunNo: number;
+  In: string;
 }
 
-interface IQueueRaw {
-  docter: string;
-  time: string;
-  VN: string;
-  XL: string;
-  Ack: string;
-  RunNo: number;
+interface IDocter {
+  doctor: string;
+  DoctorName: string;
+  DiagRoom: string;
+  time1: string;
 }
 
-export type { IDocter, IQueueRaw };
+interface IClinicQueue {
+  docters: IDocter[];
+  queues: IQueue[];
+}
+
+export type { IClinicQueue };

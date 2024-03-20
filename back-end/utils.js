@@ -1,25 +1,54 @@
-function categorizeQueueList(queueList) {
-    const clinics = [...new Set(queueList.map(queue => queue.clinic))]
-    return clinics.reduce((acc, clinic) => {
-        const _queueList = queueList.filter(queue => queue.clinic === clinic)
-        return [...acc, { clinicName: clinic, queueList: _queueList }]
-    }, [])
+const sql = require("mssql");
+const fs = require('fs');
+
+let settings = {};
+
+try {
+    const filePath = './settings.txt';
+
+    const settingsFile = fs.readFileSync(filePath, 'utf8');
+    const lines = settingsFile.split('\n');
+
+
+    lines.forEach(line => {
+        const [key, value] = line.split('=');
+        settings[key] = value.trim();
+    });
+} catch (err) {
+    console.log("Failed to read settings.txt:", err)
 }
 
-async function fetchQueue(sql) {
-    // TODO: Add error handler when query
-    return categorizeQueueList((await sql.query`
-    SELECT [mso].[dbo].[VNPresQ_Doctortime_Test].[Clinic] as [clinic]
-    ,[mso].[dbo].[VNPresQ_Doctortime_Test].[DoctorName] as [docter]
-    ,[time1] as [time]
-    ,[Vn] as [VN]
-    ,[Ack] as [Ack]
-    ,[RunNo] as [RunNo]
-    ,[X/L] as [XL]
-  FROM [mso].[dbo].[VNPresQ_Wait] RIGHT JOIN [mso].[dbo].[VNPresQ_Doctortime_Test]
-  ON [mso].[dbo].[VNPresQ_Wait].[Doctor] = [mso].[dbo].[VNPresQ_Doctortime_Test].[doctor]
-  ORDER BY [mso].[dbo].[VNPresQ_Doctortime_Test].[Clinic], [dbo].[VNPresQ_Doctortime_Test].[OrderD], [mso].[dbo].[VNPresQ_Doctortime_Test].[doctor], [Ack], [RunNo]
-  `).recordset);
+const dbConfig = {
+    user: settings.user,
+    password: settings.password,
+    server: settings.server,
+    database: settings.database,
+    options: {
+        trustedConnection: true,
+        trustServerCertificate: true,
+    },
+};
+
+async function queryClinic(clinicName, procedure_name) {
+    return await sql.connect(dbConfig).then(pool => {
+        return pool.request()
+            .input('Clinic', sql.VarChar, clinicName)
+            .execute(procedure_name)
+    }).then(result => {
+        return result.recordset
+    }).catch(err => {
+        throw err
+    });
 }
 
-module.exports = { fetchQueue }
+
+
+async function fetchQueue(clinicName) {
+    let docters = await queryClinic(clinicName, "spVNPresQ_Doctortime_Test")
+    let queues = await queryClinic(clinicName, "spVNPresQ_Wait")
+
+    return { docters: docters, queues: queues };
+}
+
+
+module.exports = { fetchQueue, settings }

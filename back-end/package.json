@@ -1,16 +1,24 @@
 {
   "name": "back-end",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "webpack --config webpack.config.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bufferutil": "^4.0.8",
+    "lodash": "^4.17.21",
     "mssql": "^10.0.2",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "utf-8-validate": "^5.0.10"
+  },
+  "devDependencies": {
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4"
   }
 }

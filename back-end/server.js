@@ -1,78 +1,60 @@
-// TODO: build project
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const sql = require("mssql");
-const { fetchQueue } = require("./utils.js")
-const fs = require('fs');
+const { fetchQueue, settings } = require("./utils.js")
+const lodash = require("lodash")
 
-const filePath = './settings.txt';
+let queueList = {}
 
-// TODO: Add error handler when read file
-const settingsFile = fs.readFileSync(filePath, 'utf8');
-const lines = settingsFile.split('\n');
-
-const settings = {};
-
-lines.forEach(line => {
-    const [key, value] = line.split('=');
-    settings[key] = value.trim();
-});
-
-const config = {
-    user: settings.user,
-    password: settings.password,
-    server: settings.server,
-    database: settings.database,
-    options: {
-        trustedConnection: true,
-        trustServerCertificate: true,
-    },
-};
-
-let queueList
-// TODO: Add error handler wehn connect database
-sql.connect(config).then(async () => {
-    queueList = await fetchQueue(sql)
-});
 
 const httpServer = createServer();
-// TODO: Cors
 const io = new Server(httpServer, { cors: {} });
 
-// TODO: Add log
 io.on("connection", (socket) => {
-    socket.on("set clinicName", (clinicName) => {
+    socket.on("set clinicName", async (clinicName) => {
         if (!clinicName) return
-        console.log(socket.id, "join", clinicName.toUpperCase());
-        socket.join(clinicName.toUpperCase());
-        socket.emit("queues updated", queueList ? JSON.stringify((queueList.find((queue) => queue.clinicName.toUpperCase() === clinicName.toUpperCase()
-        )).queueList) : null)
-    });
-    socket.on('disconnect', () => {
-        console.log(socket.id, 'disconnected');
+        let roomName = settings.clinic_prefix + clinicName.toUpperCase()
+        socket.join(roomName);
+        if (!queueList[roomName]) {
+            try {
+                queueList[roomName] = await fetchQueue(clinicName.toUpperCase())
+            } catch (err) {
+                console.log("Failed to query:", err)
+            }
+        }
+
+        socket.emit("queues updated", queueList[roomName])
     });
 });
 
+let autoFetchs = {}
 
-setInterval(async () => {
-    const latestQueueList = await fetchQueue(sql)
-    const clinicList = [...new Set(queueList.map(clinic => clinic.clinicName, latestQueueList.map(clinic => clinic.clinicName)))]
-
-    clinicList.forEach((clinicName) => {
-        const latestClinicQueue = latestQueueList.find((queue) => queue.clinicName === clinicName)
-        const clinicQueue = queueList.find((queue) => queue.clinicName === clinicName)
-        if (latestClinicQueue && clinicQueue) {
-            if (latestClinicQueue.queueList.every((queue, index) => queue.VN === clinicQueue.queueList[index].VN)) {
+io.of("/").adapter.on("create-room", (roomName) => {
+    if (!roomName.includes(settings.clinic_prefix)) return
+    autoFetchs[roomName] = setInterval(async () => {
+        try {
+            const latestQueueList = await fetchQueue(roomName.replace(settings.clinic_prefix, ''))
+        } catch (err) {
+            console.log("Failed to query:", err)
+        }
+        if (latestQueueList && queueList[roomName]) {
+            const clinicQueue = queueList[roomName]
+            if (latestQueueList.queues.every((queue, index) => lodash.isEqual(queue, clinicQueue.queues[index])) && latestQueueList.docters.every((docter, index) => docter.time1 === clinicQueue.docters[index].time1)) {
                 return
             }
         }
-        console.log(`queues of ${clinicName} is changed`)
-        io.to(clinicName.toUpperCase()).emit('queues updated', JSON.stringify(latestClinicQueue.queueList));
-        queueList = latestQueueList
-    })
 
-}, settings.query_delay);
+        const updatedQueue = latestQueueList
+        io.to(roomName).emit('queues updated', updatedQueue);
+        queueList[roomName] = updatedQueue
 
-// TODO: Add error handler when port is used
+    }, settings.query_delay)
+});
+
+io.of("/").adapter.on("delete-room", (roomName) => {
+    clearInterval(autoFetchs[roomName])
+});
+
 httpServer.listen(settings.port);
+console.log("clinic queue server started")
+
 

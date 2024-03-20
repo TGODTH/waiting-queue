@@ -1,0 +1,64 @@
+:root {
+  --column-count: 5;
+  --column-gap: 5px;
+  --row-count: 11;
+  --row-gap: 5px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+body {
+  background-color: white;
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: var(--column-gap);
+  width: fit-content;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.docter-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--row-gap);
+  width: calc(
+    100vw / var(--column-count) - var(--column-gap) + var(--column-gap) /
+      var(--column-count)
+  );
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.flex-cell {
+  background-color: rgb(19, 19, 19);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  font-weight: bold;
+  width: 100%;
+  height: calc(
+    100vw / var(--row-count) - var(--row-gap) + var(--row-gap) /
+      var(--row-count)
+  );
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.queue {
+  font-size: 64px;
+}
+
+.has-in {
+  color: green;
+}
