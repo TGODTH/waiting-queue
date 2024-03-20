@@ -1,0 +1,6 @@
+user=mso
+password=123
+server=localhost
+database=mso
+port=3000
+query_delay=5000
