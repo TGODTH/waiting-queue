@@ -1,0 +1,16 @@
+:root {
+  /* Refresh the page to apply any changes. */
+  --server-ip:"http://localhost:3000/";
+
+  --column-count: 5;
+  --column-gap: 2px;
+  --row-count: 15;
+  --row-gap: 2px;
+  --change-page-delay: 2000;
+
+  --background-color: rgb(29, 29, 29);
+  --border-color: white;
+  --white-text-color: white;
+  --red-text-color: red;
+  --green-text-color: #pink;
+}

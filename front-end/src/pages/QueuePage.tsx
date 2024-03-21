@@ -5,53 +5,87 @@ import { IClinicQueue } from "../interface/queue";
 
 function QueuePage() {
   const { clinic } = useParams();
+  const [pageStatus, setPageStatus] = useState<"Loading" | "Error" | "Done">(
+    "Loading"
+  );
+  const [error, setError] = useState<Error | null>(null);
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [clinicQueue, setClinicQueue] = useState<IClinicQueue | null>(null);
-
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const columnCount = parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue(
+      "--column-count"
+    ),
+    10
+  );
+  const columnGap = Math.abs(
+    parseFloat(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue("--column-gap")
+        .replace("px", "")
+    )
+  );
+  const displayedQueue =
+    parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--row-count"
+      ),
+      10
+    ) - 4;
+  const changePageDelay =
+    parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--change-page-delay"
+      ),
+      10
+    ) - 3;
 
   useEffect(() => {
     function onConnect() {
+      setPageStatus("Loading");
       setIsConnected(true);
     }
 
     function onDisconnect() {
+      setPageStatus("Loading");
       setIsConnected(false);
     }
 
     function onQueueUpdate(updatedClinicQueue: IClinicQueue | null) {
       setClinicQueue(updatedClinicQueue);
+      setPageStatus("Done");
     }
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("queues updated", onQueueUpdate);
+    socket.on("error", (error) => {
+      setError(error);
+      setPageStatus("Error");
+    });
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("queues updated", onQueueUpdate);
+      socket.off("error", onQueueUpdate);
     };
   }, []);
 
   useEffect(() => {
+    setPageStatus("Loading");
     if (isConnected) socket.emit("set clinicName", clinic?.toUpperCase());
   }, [isConnected, clinic]);
 
   useEffect(() => {
     let containerAnimation: number | null = null;
-    if (containerRef.current) {
-      const columnCount = parseInt(
-        getComputedStyle(containerRef.current).getPropertyValue(
-          "--column-count"
-        ),
-        10
-      );
 
+    if (containerRef.current) {
       const moveLeft = () => {
         if (containerRef.current) {
           const docterCount = Array.from(containerRef.current.children).length;
-          const oneStepPX = window.innerWidth / columnCount + 1;
+          const oneStepPX = window.innerWidth + columnGap;
           const positionFromLeft = getComputedStyle(
             containerRef.current
           ).getPropertyValue("left");
@@ -59,13 +93,14 @@ function QueuePage() {
             parseFloat(positionFromLeft.replace("px", ""))
           );
           positionFromLeftPX =
-            docterCount - positionFromLeftPX / oneStepPX <= columnCount
+            positionFromLeftPX / oneStepPX >=
+            Math.floor(docterCount / columnCount) - 1
               ? 0
               : positionFromLeftPX + oneStepPX;
           containerRef.current.style.left = "-" + positionFromLeftPX + "px";
         }
       };
-      containerAnimation = setInterval(moveLeft, 5000);
+      containerAnimation = setInterval(moveLeft, changePageDelay);
     }
 
     return () => {
@@ -73,66 +108,79 @@ function QueuePage() {
     };
   }, [clinicQueue]);
 
-  const displayed_queue = 8;
+  if (pageStatus === "Done")
+    return (
+      <div className="queue-container" ref={containerRef}>
+        {clinicQueue ? (
+          <>
+            {clinicQueue.docters.map((doctor) => {
+              const docterQueue = clinicQueue.queues.filter(
+                (queue) => queue.Doctor === doctor.doctor
+              );
 
-  return (
-    <div className="container" ref={containerRef}>
-      {clinicQueue ? (
-        <>
-          {clinicQueue.docters.map((doctor) => {
-            const docterQueue = clinicQueue.queues.filter(
-              (queue) => queue.Doctor === doctor.doctor
-            );
+              return (
+                <div key={doctor.doctor} className="docter-column">
+                  <div className="flex-cell diag-room">{doctor.DiagRoom}</div>
+                  <div className="flex-cell docter-name">
+                    {doctor.DoctorName}
+                  </div>
+                  <div className="flex-cell docter-time">
+                    {doctor.time1.split(" , ").map((time, index) => (
+                      <React.Fragment key={"docterTime-" + index}>
+                        {index !== 0 ? <br /> : ""} {time}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  <div className="flex-cell VN">VN</div>
 
-            return (
-              <div key={doctor.doctor} className="docter-column">
-                <div className="flex-cell diag-room">{doctor.DiagRoom}</div>
-                <div className="flex-cell docter-name">{doctor.DoctorName}</div>
-                <div className="flex-cell docter-time">
-                  {doctor.time1.split(" , ").map((time, index) => (
-                    <React.Fragment key={"docterTime-" + index}>
-                      {index !== 0 ? <br /> : ""} {time}
-                    </React.Fragment>
-                  ))}
+                  {[...Array(displayedQueue)].map((_, queueIndex) => {
+                    return docterQueue[queueIndex] ? (
+                      <div
+                        key={doctor.doctor + queueIndex}
+                        className={`flex-cell queue${
+                          docterQueue[queueIndex].In ? " has-in" : ""
+                        }`}
+                      >
+                        {docterQueue[queueIndex].Vn}
+                      </div>
+                    ) : (
+                      <div
+                        key={doctor.doctor + queueIndex}
+                        className="flex-cell queue"
+                      ></div>
+                    );
+                  })}
                 </div>
-                <div className="flex-cell VN">VN</div>
-
-                {[...Array(displayed_queue)].map((_, queueIndex) => {
-                  return docterQueue[queueIndex] ? (
-                    <div
-                      key={doctor.doctor + queueIndex}
-                      className={`flex-cell queue${
-                        docterQueue[queueIndex].In ? " has-in" : ""
-                      }`}
-                    >
-                      {docterQueue[queueIndex].Vn}
-                    </div>
-                  ) : (
-                    <div
-                      key={doctor.doctor + queueIndex}
-                      className="flex-cell queue"
-                    ></div>
-                  );
-                })}
-              </div>
-            );
-          })}
-          {clinicQueue.docters.length < 5
-            ? [...Array(5 - clinicQueue.docters.length)].map(
-                (_, column_index) => (
+              );
+            })}
+            {clinicQueue.docters.length < 5 ||
+            (clinicQueue.docters.length / columnCount) % 1 != 0
+              ? [
+                  ...Array(
+                    Math.ceil(clinicQueue.docters.length / columnCount) *
+                      columnCount -
+                      clinicQueue.docters.length
+                  ),
+                ].map((_, column_index) => (
                   <div key={column_index} className="docter-column empty">
-                    {[...Array(displayed_queue + 4)].map((_, queueIndex) => (
+                    {[...Array(displayedQueue + 4)].map((_, queueIndex) => (
                       <div key={queueIndex} className="flex-cell"></div>
                     ))}
                   </div>
-                )
-              )
-            : ""}
-        </>
-      ) : (
-        "Loading"
-      )}
-    </div>
+                ))
+              : ""}
+          </>
+        ) : (
+          "Loading"
+        )}
+      </div>
+    );
+  if (pageStatus === "Loading")
+    return <p className="alert-text loading">Loading</p>;
+  return (
+    <p className="alert-text error">
+      Error: {error ? error.message : "Unexpected Error"}
+    </p>
   );
 }
 

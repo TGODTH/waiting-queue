@@ -1,12 +1,14 @@
+const express = require("express");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const { fetchQueue, settings } = require("./utils.js")
-const lodash = require("lodash")
+const lodash = require("lodash");
+const path = require("path");
 
 let queueList = {}
 
-
-const httpServer = createServer();
+const app = express();
+const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: {} });
 
 io.on("connection", (socket) => {
@@ -31,14 +33,15 @@ let autoFetchs = {}
 io.of("/").adapter.on("create-room", (roomName) => {
     if (!roomName.includes(settings.clinic_prefix)) return
     autoFetchs[roomName] = setInterval(async () => {
+        let latestQueueList
         try {
-            const latestQueueList = await fetchQueue(roomName.replace(settings.clinic_prefix, ''))
+            latestQueueList = await fetchQueue(roomName.replace(settings.clinic_prefix, ''))
         } catch (err) {
             console.log("Failed to query:", err)
         }
         if (latestQueueList && queueList[roomName]) {
             const clinicQueue = queueList[roomName]
-            if (latestQueueList.queues.every((queue, index) => lodash.isEqual(queue, clinicQueue.queues[index])) && latestQueueList.docters.every((docter, index) => docter.time1 === clinicQueue.docters[index].time1)) {
+            if (latestQueueList.queues.every((queue, index) => lodash.isEqual(queue, clinicQueue.queues[index])) && latestQueueList.docters.every((docter, index) => lodash.isEqual(docter, clinicQueue.docters[index]))) {
                 return
             }
         }
@@ -54,7 +57,13 @@ io.of("/").adapter.on("delete-room", (roomName) => {
     clearInterval(autoFetchs[roomName])
 });
 
+app.use(express.static("build"))
+
+app.use('*', function (req, res) {
+    res.sendFile(path.join(__dirname, '/build/index.html'));
+});
+
 httpServer.listen(settings.port);
-console.log("clinic queue server started")
+console.log("clinic queue server started at port " + settings.port)
 
 
