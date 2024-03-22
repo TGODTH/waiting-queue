@@ -1,16 +1,25 @@
 :root {
   /* Refresh the page to apply any changes. */
-  --server-ip:"http://localhost:3000/";
-
   --column-count: 5;
   --column-gap: 2px;
-  --row-count: 15;
+  --row-count: 11;
   --row-gap: 2px;
-  --change-page-delay: 2000;
+  --change-page-delay: 5000;
+
+  --docter-name-margin: 10px;
+  --vn-xl-distance: 10px;
+  --xl-width: 7.5vw;
+
+  --room-font-size: 28px;
+  --docter-name-font-size: 28px;
+  --docter-time-font-size: 28px;
+  --vn-header-font-size: 28px;
+  --vn-font-size: 64px;
+  --xl-font-size: 46px;
 
   --background-color: rgb(29, 29, 29);
   --border-color: white;
   --white-text-color: white;
   --red-text-color: red;
-  --green-text-color: #pink;
+  --green-text-color: green;
 }

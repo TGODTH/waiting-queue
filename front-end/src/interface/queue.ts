@@ -4,6 +4,7 @@ interface IQueue {
   Ack: string;
   RunNo: number;
   In: string;
+  XL: string;
 }
 
 interface IDocter {

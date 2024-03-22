@@ -122,7 +122,7 @@ function QueuePage() {
                 <div key={doctor.doctor} className="docter-column">
                   <div className="flex-cell diag-room">{doctor.DiagRoom}</div>
                   <div className="flex-cell docter-name">
-                    {doctor.DoctorName}
+                    <p className="docter-name-text">{doctor.DoctorName}</p>
                   </div>
                   <div className="flex-cell docter-time">
                     {doctor.time1.split(" , ").map((time, index) => (
@@ -131,7 +131,7 @@ function QueuePage() {
                       </React.Fragment>
                     ))}
                   </div>
-                  <div className="flex-cell VN">VN</div>
+                  <div className="flex-cell vn-header">VN</div>
 
                   {[...Array(displayedQueue)].map((_, queueIndex) => {
                     return docterQueue[queueIndex] ? (
@@ -141,7 +141,15 @@ function QueuePage() {
                           docterQueue[queueIndex].In ? " has-in" : ""
                         }`}
                       >
-                        {docterQueue[queueIndex].Vn}
+                        <div className="vn-xl-container">
+                          <span className="queue-vn">
+                            {docterQueue[queueIndex].Vn}
+                          </span>
+
+                          <span className="queue-xl">
+                            {docterQueue[queueIndex].XL}
+                          </span>
+                        </div>
                       </div>
                     ) : (
                       <div

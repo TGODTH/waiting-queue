@@ -56,19 +56,7 @@ body {
   height: 100vh;
   box-sizing: border-box;
 }
-.flex-cell.docter-name {
-  padding-left: 4px;
-  justify-content: start;
-  color: var(--white-text-color);
-}
-.flex-cell.docter-time {
-  justify-content: center;
-  color: var(--white-text-color);
-}
-.flex-cell.VN {
-  justify-content: center;
-  color: var(--white-text-color);
-}
+
 .flex-cell {
   background-color: var(--background-color);
   display: flex;
@@ -85,11 +73,45 @@ body {
   overflow: hidden;
   white-space: nowrap;
 }
-
-.queue {
-  font-size: 64px;
+.flex-cell.diag-room {
+  font-size: var(--room-font-size);
 }
-
-.has-in {
+.flex-cell.docter-name {
+  font-size: var(--docter-name-font-size);
+  color: var(--white-text-color);
+}
+.flex-cell.docter-name .docter-name-text {
+  overflow: hidden;
+  width: calc(100% - 2 * var(--docter-name-margin));
+}
+.flex-cell.docter-time {
+  font-size: var(--docter-time-font-size);
+  color: var(--white-text-color);
+}
+.flex-cell.vn-header {
+  font-size: var(--vn-header-font-size);
+  color: var(--white-text-color);
+}
+.flex-cell.queue {
+  font-size: 64px;
+  justify-content: right;
+}
+.flex-cell.queue.has-in {
   color: var(--green-text-color);
+}
+.flex-cell.queue .vn-xl-container {
+  display: grid;
+  grid-template-columns: 1fr var(--xl-width);
+  gap: var(--vn-xl-distance);
+  align-items: end;
+}
+.flex-cell.queue .queue-vn {
+  font-size: var(--vn-font-size);
+  line-height: 100%;
+}
+.flex-cell.queue .queue-xl {
+  font-size: var(--xl-font-size);
+  margin-bottom: calc(
+    0.125 * var(--vn-font-size) - 0.125 * var(--xl-font-size)
+  );
 }
