@@ -1,27 +1,10 @@
-const sql = require("mssql");
-const fs = require("fs");
-
-let settings = {};
-
-try {
-    const filePath = "./settings.txt";
-
-    const settingsFile = fs.readFileSync(filePath, "utf8");
-    const lines = settingsFile.split("\n");
-
-    lines.forEach((line) => {
-        const [key, value] = line.split("=");
-        settings[key] = value.trim();
-    });
-} catch (err) {
-    console.log("Failed to read settings.txt:", err);
-}
+import sql from "mssql";
 
 const dbConfig = {
-    user: settings.user,
-    password: settings.password,
-    server: settings.server,
-    database: settings.database,
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+    server: process.env.SERVER,
+    database: process.env.DATABASE,
     options: {
         trustedConnection: true,
         trustServerCertificate: true,
@@ -35,8 +18,7 @@ sql.connect(dbConfig).then(() => {
 });
 
 async function queryClinic(clinicName, procedure_name) {
-    return await sql
-        .connect(dbConfig)
+    return await sql.connect(dbConfig)
         .then((pool) => {
             return pool
                 .request()
@@ -58,4 +40,4 @@ async function fetchQueue(clinicName) {
     return { docters: docters, queues: queues };
 }
 
-module.exports = { fetchQueue, settings };
+export { fetchQueue };

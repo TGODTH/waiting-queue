@@ -18,20 +18,23 @@ body {
 }
 
 .alert-text {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   color: white;
-  font-size: 32px;
+  font-size: var(--alert-font-size);
   font-weight: 500;
 }
 
 .alert-text.loading {
-  color: dodgerblue;
+  color: var(--loading-text-color);
+}
+.alert-text.no-data {
+  color: var(--no-data-text-color);
 }
 .alert-text.error {
-  color: red;
+  color: var(--red-text-color);
 }
 
 .queue-container {

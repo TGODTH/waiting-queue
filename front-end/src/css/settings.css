@@ -8,8 +8,9 @@
 
   --docter-name-margin: 10px;
   --vn-xl-distance: 10px;
-  --xl-width: 7.5vw;
+  --xl-width: calc(100vw / var(--column-count) / 3);
 
+  --alert-font-size: 32px;
   --room-font-size: 28px;
   --docter-name-font-size: 28px;
   --docter-time-font-size: 28px;
@@ -17,9 +18,11 @@
   --vn-font-size: 64px;
   --xl-font-size: 46px;
 
-  --background-color: rgb(29, 29, 29);
-  --border-color: white;
+  --background-color: rgb(0, 0, 0);
+  --border-color: rgb(30, 30, 30);
   --white-text-color: white;
   --red-text-color: red;
   --green-text-color: green;
+  --loading-text-color: dodgerblue;
+  --no-data-text-color: dodgerblue;
 }

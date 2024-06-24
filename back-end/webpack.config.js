@@ -9,7 +9,9 @@ const defaultSettings = {
     database: 'mso',
     port: 3000,
     query_delay: 5000,
-    clinic_prefix: 'clinic_'
+    clinic_prefix: 'clinic_',
+    https_key: "/path/to/my/key.pem",
+    https_cert: "/path/to/my/cert.pem"
 };
 
 class CreateSettingsFilePlugin {

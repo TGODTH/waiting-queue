@@ -1,10 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
 import { socket } from "../socket";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { IClinicQueue } from "../interface/queue";
 
 function QueuePage() {
   const { clinic } = useParams();
+  const [searchParams] = useSearchParams();
+
+  const params: { [key: string]: number } = {};
+  for (const entry of searchParams.entries()) {
+    const value = parseInt(entry[1]);
+    if (!isNaN(value)) {
+      let key: string;
+      switch (entry[0]) {
+        case "c":
+          key = "--column-count";
+          break;
+        case "g":
+          key = "--column-gap";
+          break;
+        case "q":
+          key = "--row-count";
+          break;
+        case "d":
+          key = "--change-page-delay";
+          break;
+        default:
+          continue;
+      }
+      document.documentElement.style.setProperty(key, entry[1]);
+      params[entry[0]] = value;
+    }
+  }
+
   const [pageStatus, setPageStatus] = useState<"Loading" | "Error" | "Done">(
     "Loading"
   );
@@ -13,20 +41,25 @@ function QueuePage() {
   const [clinicQueue, setClinicQueue] = useState<IClinicQueue | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const columnCount = parseInt(
-    getComputedStyle(document.documentElement).getPropertyValue(
-      "--column-count"
-    ),
-    10
-  );
-  const columnGap = Math.abs(
-    parseFloat(
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--column-gap")
-        .replace("px", "")
-    )
-  );
+  const columnCount =
+    params.c ??
+    parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--column-count"
+      ),
+      10
+    );
+  const columnGap =
+    params.g ??
+    Math.abs(
+      parseFloat(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--column-gap")
+          .replace("px", "")
+      )
+    );
   const displayedQueue =
+    params.q ??
     parseInt(
       getComputedStyle(document.documentElement).getPropertyValue(
         "--row-count"
@@ -34,6 +67,7 @@ function QueuePage() {
       10
     ) - 4;
   const changePageDelay =
+    params.d ??
     parseInt(
       getComputedStyle(document.documentElement).getPropertyValue(
         "--change-page-delay"
@@ -107,60 +141,64 @@ function QueuePage() {
       if (containerAnimation) clearInterval(containerAnimation);
     };
   }, [clinicQueue]);
-
   if (pageStatus === "Done")
     return (
       <div className="queue-container" ref={containerRef}>
         {clinicQueue ? (
           <>
-            {clinicQueue.docters.map((doctor) => {
-              const docterQueue = clinicQueue.queues.filter(
-                (queue) => queue.Doctor === doctor.doctor
-              );
+            {clinicQueue.queues.length == 0 &&
+            clinicQueue.docters.length == 0 ? (
+              <p className="alert-text no-data">ไม่มีข้อมูล</p>
+            ) : (
+              clinicQueue.docters.map((doctor) => {
+                const docterQueue = clinicQueue.queues.filter(
+                  (queue) => queue.Doctor === doctor.doctor
+                );
 
-              return (
-                <div key={doctor.doctor} className="docter-column">
-                  <div className="flex-cell diag-room">{doctor.DiagRoom}</div>
-                  <div className="flex-cell docter-name">
-                    <p className="docter-name-text">{doctor.DoctorName}</p>
-                  </div>
-                  <div className="flex-cell docter-time">
-                    {doctor.time1.split(" , ").map((time, index) => (
-                      <React.Fragment key={"docterTime-" + index}>
-                        {index !== 0 ? <br /> : ""} {time}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                  <div className="flex-cell vn-header">VN</div>
+                return (
+                  <div key={doctor.doctor} className="docter-column">
+                    <div className="flex-cell diag-room">{doctor.DiagRoom}</div>
+                    <div className="flex-cell docter-name">
+                      <p className="docter-name-text">{doctor.DoctorName}</p>
+                    </div>
+                    <div className="flex-cell docter-time">
+                      {doctor.time1.split(" , ").map((time, index) => (
+                        <React.Fragment key={"docterTime-" + index}>
+                          {index !== 0 ? <br /> : ""} {time}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <div className="flex-cell vn-header">VN</div>
 
-                  {[...Array(displayedQueue)].map((_, queueIndex) => {
-                    return docterQueue[queueIndex] ? (
-                      <div
-                        key={doctor.doctor + queueIndex}
-                        className={`flex-cell queue${
-                          docterQueue[queueIndex].In ? " has-in" : ""
-                        }`}
-                      >
-                        <div className="vn-xl-container">
-                          <span className="queue-vn">
-                            {docterQueue[queueIndex].Vn}
-                          </span>
+                    {[...Array(displayedQueue)].map((_, queueIndex) => {
+                      return docterQueue[queueIndex] ? (
+                        <div
+                          key={doctor.doctor + queueIndex}
+                          className={`flex-cell queue${
+                            docterQueue[queueIndex].In ? " has-in" : ""
+                          }`}
+                        >
+                          <div className="vn-xl-container">
+                            <span className="queue-vn">
+                              {docterQueue[queueIndex].Vn}
+                            </span>
 
-                          <span className="queue-xl">
-                            {docterQueue[queueIndex].XL}
-                          </span>
+                            <span className="queue-xl">
+                              {docterQueue[queueIndex].XL}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div
-                        key={doctor.doctor + queueIndex}
-                        className="flex-cell queue"
-                      ></div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+                      ) : (
+                        <div
+                          key={doctor.doctor + queueIndex}
+                          className="flex-cell queue"
+                        ></div>
+                      );
+                    })}
+                  </div>
+                );
+              })
+            )}
             {clinicQueue.docters.length < 5 ||
             (clinicQueue.docters.length / columnCount) % 1 != 0
               ? [
